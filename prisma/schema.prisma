@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id     Int      @id @default(autoincrement())
+  username    String   @unique
+  password    String
+  email       String   @unique
+  full_name   String?
+  phone_number String?
+  user_type   UserType
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  companies   Company[]
+  applications JobApplication[]
+  saved_jobs   SavedJob[]
+  reviews      CompanyReview[]
+}
+
+model Company {
+  company_id  Int       @id @default(autoincrement())
+  user_id     Int
+  company_name String
+  description String?
+  website     String?
+  location    String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  user        User      @relation(fields: [user_id], references: [user_id])
+  jobs        Job[]
+  reviews     CompanyReview[]
+}
+
+model Job {
+  job_id          Int          @id @default(autoincrement())
+  company_id      Int
+  job_title       String
+  job_description String
+  location        String?
+  job_type        JobType
+  salary_range    String?
+  posted_at       DateTime     @default(now())
+  closing_date    DateTime?
+
+  company         Company      @relation(fields: [company_id], references: [company_id])
+  applications    JobApplication[]
+  categories      Job_Category[]
+  saved_jobs      SavedJob[]
+}
+
+model JobApplication {
+  application_id Int      @id @default(autoincrement())
+  job_id         Int
+  user_id        Int
+  cover_letter   String?
+  resume         String
+  applied_at     DateTime @default(now())
+
+  job            Job      @relation(fields: [job_id], references: [job_id])
+  user           User     @relation(fields: [user_id], references: [user_id])
+}
+
+model JobCategory {
+  category_id   Int          @id @default(autoincrement())
+  category_name String       @unique
+
+  jobs          Job_Category[]
+}
+
+model Job_Category {
+  job_id       Int
+  category_id  Int
+
+  job          Job           @relation(fields: [job_id], references: [job_id])
+  category     JobCategory   @relation(fields: [category_id], references: [category_id])
+
+  @@id([job_id, category_id])
+}
+
+model SavedJob {
+  saved_job_id Int      @id @default(autoincrement())
+  user_id      Int
+  job_id       Int
+  saved_at     DateTime @default(now())
+
+  user         User     @relation(fields: [user_id], references: [user_id])
+  job          Job      @relation(fields: [job_id], references: [job_id])
+}
+
+model CompanyReview {
+  review_id    Int      @id @default(autoincrement())
+  company_id   Int
+  user_id      Int
+  rating       Int
+  review       String?
+  reviewed_at  DateTime @default(now())
+
+  company      Company  @relation(fields: [company_id], references: [company_id])
+  user         User     @relation(fields: [user_id], references: [user_id])
+}
+
+enum UserType {
+  job_seeker
+  employer
+}
+
+enum JobType {
+  full_time
+  part_time
+  contract
+  internship
+  temporary
+}
